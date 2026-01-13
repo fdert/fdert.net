@@ -1,15 +1,33 @@
-// src/components/ui/toaster.tsx
-import { Toaster as SonnerToaster } from "sonner";
+import {
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "@/components/ui/toast"
+import { useToast } from "@/components/ui/use-toast"
 
 export function Toaster() {
-  return (
-    <SonnerToaster
-      richColors
-      closeButton
-      position="top-right"
-    />
-  );
-}
+  const { toasts } = useToast()
 
-// لو كان App.tsx يستورد Default بالغلط، نخليها آمنة:
-export default Toaster;
+  return (
+    <ToastProvider>
+      {toasts.map(function ({ id, title, description, action, ...props }) {
+        return (
+          <Toast key={id} {...props}>
+            <div className="grid gap-1">
+              {title && <ToastTitle>{title}</ToastTitle>}
+              {description && (
+                <ToastDescription>{description}</ToastDescription>
+              )}
+            </div>
+            {action}
+            <ToastClose />
+          </Toast>
+        )
+      })}
+      <ToastViewport />
+    </ToastProvider>
+  )
+}
