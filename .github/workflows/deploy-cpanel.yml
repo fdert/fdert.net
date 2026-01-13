@@ -1,9 +1,9 @@
-name: Build and Deploy to cPanel (FastComet)
+name: build-and-deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -17,6 +17,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -24,27 +25,40 @@ jobs:
       - name: Build project
         run: npm run build
 
+      # مهم لعمل Routing في React SPA (عشان الروابط الداخلية ما تعطي 404)
       - name: Create .htaccess for SPA routing
         run: |
-          echo "RewriteEngine On" > dist/.htaccess
-          echo "RewriteBase /" >> dist/.htaccess
-          echo "RewriteRule ^index\.html$ - [L]" >> dist/.htaccess
-          echo "RewriteCond %{REQUEST_FILENAME} !-f" >> dist/.htaccess
-          echo "RewriteCond %{REQUEST_FILENAME} !-d" >> dist/.htaccess
-          echo "RewriteRule . /index.html [L]" >> dist/.htaccess
+          cat > dist/.htaccess <<'EOF'
+          <IfModule mod_rewrite.c>
+            RewriteEngine On
+            RewriteBase /
+            RewriteRule ^index\.html$ - [L]
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteRule . /index.html [L]
+          </IfModule>
+          EOF
 
-      - name: Deploy dist to cPanel public_html via SFTP
+      - name: Deploy dist to cPanel public_html via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          protocol: sftp
-          server: fdert1.net
-          username: fdertnet
-          password: ${{ secrets.SFTP_PASSWORD }}
-          port: 22
+          protocol: ftps
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+
+          # مجلد البناء المحلي
           local-dir: dist/
-          server-dir: /home5/fdertnet/public_html/
+
+          # المسار داخل حسابك (لا تكتب /home5/...)
+          server-dir: /public_html/
+
+          # لا تمسح كل شيء على السيرفر
           dangerous-clean-slate: false
+
           exclude: |
             **/.git*
             **/.github/**
             **/node_modules/**
+            **/.vscode/**
