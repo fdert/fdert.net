@@ -16,34 +16,31 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: 20
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build project
         run: npm run build
 
-      - name: Create .htaccess for SPA routing (subfolder)
+      - name: Create .htaccess for SPA routing
         run: |
-          mkdir -p dist
-          cat > dist/.htaccess <<'EOF'
-          Options -MultiViews
+          echo "<IfModule mod_rewrite.c>
           RewriteEngine On
           RewriteBase /fdert22/
+          RewriteRule ^index\.html$ - [L]
           RewriteCond %{REQUEST_FILENAME} !-f
           RewriteCond %{REQUEST_FILENAME} !-d
           RewriteRule . /fdert22/index.html [L]
-          EOF
+          </IfModule>" > dist/.htaccess
 
       - name: Deploy to FastComet via SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
+          username: ${{ secrets.SFTP_USERNAME }}
           server: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USER }}
-          password: ${{ secrets.SFTP_PASS }}
-          port: ${{ secrets.SFTP_PORT }}
-          local_path: "dist/*"
-          remote_path: "/home5/fdertnet/public_html/fdert22"
-          sftp_only: true
+          port: 21
+          ssh_private_key: ${{ secrets.SFTP_PRIVATE_KEY }}
+          local_path: dist/*
+          remote_path: public_html/fdert22
