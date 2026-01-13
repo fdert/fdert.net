@@ -52,7 +52,7 @@ jobs:
           local-dir: dist/
 
           # المسار داخل حسابك (لا تكتب /home5/...)
-          server-dir: /public_html/
+          server-dir: /public_html/fdert22/
 
           # لا تمسح كل شيء على السيرفر
           dangerous-clean-slate: false
